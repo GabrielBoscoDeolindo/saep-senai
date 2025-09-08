@@ -1,0 +1,16 @@
+import { Routes, Route } from 'react-router';
+import Cadastro from './pages/Register';
+import Login from './pages/Login';
+import Home from './pages/Home';
+
+function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<Login />} />
+      <Route path="/cadastro" element={<Cadastro />} />
+      <Route path="/home" element={<Home />} />
+    </Routes>
+  );
+}
+
+export default App;

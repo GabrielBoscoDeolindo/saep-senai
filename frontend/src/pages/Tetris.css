@@ -1,0 +1,38 @@
+
+
+#game-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+h1 {
+  margin-bottom: 20px;
+}
+
+#game-board {
+  display: grid;
+  grid-template-columns: repeat(10, 30px);
+  grid-template-rows: repeat(20, 30px);
+  gap: 1px;
+  background-color: #000;
+  border: 5px solid #555;
+}
+
+.cell {
+  width: 30px;
+  height: 30px;
+  background-color: #222;
+}
+
+.piece-I { background-color: cyan; }
+.piece-L { background-color: orange; }
+.piece-J { background-color: blue; }
+.piece-O { background-color: yellow; }
+.piece-S { background-color: lime; }
+.piece-T { background-color: purple; }
+.piece-Z { background-color: red; }
