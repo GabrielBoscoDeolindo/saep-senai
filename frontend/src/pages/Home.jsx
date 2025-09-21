@@ -1,40 +1,108 @@
-import React from 'react';
-import Tetris from 'react-tetris';
+import { useState, useEffect } from "react";
+import axios from "axios";
+import { DndContext, closestCorners } from "@dnd-kit/core";
+import Column from "../components/Column";
+import NewTask from "../components/NewTask";
 
-function HomePage() {
+// --- API Config ---
+const apiClient = axios.create({ baseURL: "http://127.0.0.1:8000/" });
+apiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem("accessToken");
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
+// --- API Calls ---
+const getAtividades = () => apiClient.get("/atividades/");
+const updateAtividade = (id, data) => apiClient.patch(`/atividades/${id}/`, data);
+const deleteAtividade = (id) => apiClient.delete(`/atividades/${id}/`);
+const createAtividade = (data) => apiClient.post("/atividades/", data);
+
+// --- Column Config ---
+const colunas = {
+  todo: { title: "A Fazer" },
+  doing: { title: "Em Progresso" },
+  done: { title: "Concluído" },
+};
+
+const Home = () => {
+  const [tasks, setTasks] = useState({ todo: [], doing: [], done: [] });
+
+  // --- Load tasks ---
+  useEffect(() => {
+    const fetchTasks = async () => {
+      const response = await getAtividades();
+      const organizedTasks = { todo: [], doing: [], done: [] };
+      (response.data.results || response.data).forEach((task) => {
+        if (organizedTasks[task.status]) organizedTasks[task.status].push(task);
+      });
+      setTasks(organizedTasks);
+    };
+
+    fetchTasks();
+  }, []);
+
+  // --- Handlers ---
+  const handleDragEnd = async ({ active, over }) => {
+    if (!over || active.id === over.id) return;
+
+    const sourceColumn = active.data.current.sourceColumn;
+    const destColumn = over.id;
+    if (sourceColumn === destColumn) return;
+
+    const movedTask = tasks[sourceColumn].find((t) => t.id === active.id);
+
+    setTasks((prev) => ({
+      ...prev,
+      [sourceColumn]: prev[sourceColumn].filter((t) => t.id !== active.id),
+      [destColumn]: [...prev[destColumn], { ...movedTask, status: destColumn }],
+    }));
+
+    await updateAtividade(active.id, { status: destColumn });
+  };
+
+  const handleDeleteTask = async (task) => {
+    await deleteAtividade(task.id);
+    setTasks((prev) => ({
+      ...prev,
+      [task.status]: prev[task.status].filter((t) => t.id !== task.id),
+    }));
+  };
+
+  const handleCreateTask = async (newTask) => {
+    const response = await createAtividade(newTask);
+    const task = response.data;
+
+    setTasks((prev) => ({
+      ...prev,
+      [task.status]: [...prev[task.status], task],
+    }));
+  };
+
   return (
-    <div className="tetris-container">
-      <h1>Bem-vindo! Que tal uma partida de Tetris?</h1>
+    <main className="bg-slate-900 min-h-screen text-white p-6 font-sans">
+      <header className="mb-8">
+        <h1 className="text-[2rem] font-bold">Quadro Kanban</h1>
+        <p className="pl-1">Gabriel Bosco Deolindo</p>
+      </header>
 
-      {/* Adicionamos a div com a className "game-area" aqui */}
-      <div className="game-area"> 
-        <Tetris>
-          {({ Gameboard, points, lines, level, state, controller }) => (
-            <div>
-              {/* O placar pode ficar fora do Gameboard, mas dentro da lógica */}
-              <div className="game-score">
-                <p>Pontos: {points}</p>
-                <p>Linhas: {lines}</p>
-                <p>Nível: {level}</p>
-              </div>
-
-              {/* O Gameboard é o componente visual do jogo */}
-              <Gameboard />
-
-              {state === 'lost' && (
-                <div>
-                  <h2>Fim de Jogo!</h2>
-                  <button onClick={controller.restart}>
-                    Jogar Novamente
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-        </Tetris>
-      </div>
-    </div>
+      <DndContext onDragEnd={handleDragEnd} collisionDetection={closestCorners}>
+        <div className="flex justify-center gap-6">
+          {Object.keys(colunas).map((columnId) => (
+            <Column
+              key={columnId}
+              id={columnId}
+              title={colunas[columnId].title}
+              tasks={tasks[columnId]}
+              onDelete={handleDeleteTask}
+            >
+              <NewTask columnId={columnId} onCreate={handleCreateTask} />
+            </Column>
+          ))}
+        </div>
+      </DndContext>
+    </main>
   );
-}
+};
 
-export default HomePage;
+export default Home;

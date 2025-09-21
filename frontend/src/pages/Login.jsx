@@ -20,7 +20,7 @@ function Login() {
 
       const { access, refresh } = response.data;
 
-      localStorage.setItem("access_token", access);
+      localStorage.setItem("accessToken", access);
       localStorage.setItem("refresh_token", refresh);
       navigate("/home");
 
