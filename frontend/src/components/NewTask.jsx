@@ -24,7 +24,7 @@ const NewTask = ({ columnId, onCreate }) => {
     <>
       <button
         onClick={() => setShowModal(true)}
-        className="mt-4 w-full flex items-center justify-center gap-1 text-sm px-3 py-2 rounded-lg bg-[#8743fd] hover:bg-[#5b0edf] cursor-pointer"
+        className="mt-4 w-full flex items-center justify-center gap-1 text-sm px-3 py-2 rounded-lg bg-[#5d6cff] hover:bg-[#5b0edf] cursor-pointer"
       >
         Nova Tarefa
       </button>

@@ -14,7 +14,8 @@ apiClient.interceptors.request.use((config) => {
 
 // --- API Calls ---
 const getAtividades = () => apiClient.get("/atividades/");
-const updateAtividade = (id, data) => apiClient.patch(`/atividades/${id}/`, data);
+const updateAtividade = (id, data) =>
+  apiClient.patch(`/atividades/${id}/`, data);
 const deleteAtividade = (id) => apiClient.delete(`/atividades/${id}/`);
 const createAtividade = (data) => apiClient.post("/atividades/", data);
 
@@ -79,8 +80,22 @@ const Home = () => {
     }));
   };
 
+  const handleUpdateTask = async (id, updates) => {
+    const response = await updateAtividade(id, updates);
+    const updatedTask = response.data;
+
+    setTasks((prev) => {
+      const newTasks = { ...prev };
+      const column = updatedTask.status;
+      newTasks[column] = newTasks[column].map((t) =>
+        t.id === id ? updatedTask : t
+      );
+      return newTasks;
+    });
+  };
+
   return (
-    <main className="bg-slate-900 min-h-screen text-white p-6 font-sans">
+    <main className="bg-[#0f172b] min-h-screen text-white p-6 font-sans">
       <header className="mb-8">
         <h1 className="text-[2rem] font-bold">Quadro Kanban</h1>
         <p className="pl-1">Gabriel Bosco Deolindo</p>
@@ -95,6 +110,7 @@ const Home = () => {
               title={colunas[columnId].title}
               tasks={tasks[columnId]}
               onDelete={handleDeleteTask}
+              onUpdate={handleUpdateTask}
             >
               <NewTask columnId={columnId} onCreate={handleCreateTask} />
             </Column>
