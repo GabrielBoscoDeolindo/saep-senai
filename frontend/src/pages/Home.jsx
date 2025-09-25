@@ -46,19 +46,16 @@ const Home = () => {
   // --- Handlers ---
   const handleDragEnd = async ({ active, over }) => {
     if (!over || active.id === over.id) return;
-
     const sourceColumn = active.data.current.sourceColumn;
     const destColumn = over.id;
     if (sourceColumn === destColumn) return;
 
     const movedTask = tasks[sourceColumn].find((t) => t.id === active.id);
-
     setTasks((prev) => ({
       ...prev,
       [sourceColumn]: prev[sourceColumn].filter((t) => t.id !== active.id),
       [destColumn]: [...prev[destColumn], { ...movedTask, status: destColumn }],
     }));
-
     await updateAtividade(active.id, { status: destColumn });
   };
 
@@ -102,7 +99,7 @@ const Home = () => {
       </header>
 
       <DndContext onDragEnd={handleDragEnd} collisionDetection={closestCorners}>
-        <div className="flex justify-center gap-6">
+        <div className="flex justify-center gap-6" aria-label="Quadro Kanban">
           {Object.keys(colunas).map((columnId) => (
             <Column
               key={columnId}

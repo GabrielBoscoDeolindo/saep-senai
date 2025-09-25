@@ -1,92 +1,104 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { z } from "zod";
+
+const loginSchema = z.object({
+  username: z.string().min(1, { message: "O nome de usuário é obrigatório." }),
+  password: z.string().min(1, { message: "A senha é obrigatória." }),
+});
 
 function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [errors, setErrors] = useState({});
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
+    setErrors({});
 
     try {
+      loginSchema.parse({ username, password });
+
       const response = await axios.post("http://localhost:8000/login/", {
         username,
         password,
       });
 
       const { access, refresh } = response.data;
-
       localStorage.setItem("accessToken", access);
-      localStorage.setItem("refresh_token", refresh);
+      localStorage.setItem("refreshToken", refresh);
       navigate("/home");
 
     } catch (err) {
-      console.error("Erro no login:", err);
-      setError("Nome de usuário ou senha incorretos.");
+      if (err instanceof z.ZodError) {
+        const formattedErrors = {};
+        err.errors.forEach((error) => {
+          formattedErrors[error.path[0]] = error.message;
+        });
+        setErrors(formattedErrors);
+      } else {
+        setErrors({ api: "Nome de usuário ou senha incorretos." });
+      }
     }
   };
 
   return (
-    <div className="flex">
+    <main className="bg-[#0f172b] min-h-screen text-white font-sans flex items-center justify-center p-4">
+      <div className="bg-slate-800 w-full max-w-md p-8 rounded-xl border-2 border-[#5d6cff]">
+        <h1 className="text-3xl font-bold text-center mb-6">
+          Entre na sua Conta
+        </h1>
 
-      <main className="w-full bg-background">
-        <header className="flex justify-end">
-        </header>
-
-        <section className="flex flex-col items-center gap-5 mt-10">
-          <h1 className="text-charcoal text-[2.25rem] font-semibold">
-            Entre na sua conta
-          </h1>
-
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <label className="text-charcoal font-semibold text-[1.25rem]">
-              Nome de usuário:
-            </label>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+          <div>
+            <label htmlFor="username" className="text-sm font-semibold text-slate-300 mb-1 block">Nome de usuário</label>
             <input
+              id="username"
               type="text"
-              placeholder="Nome de usuário"
+              placeholder="Digite seu nome de usuário"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              required
-              className="border border-black rounded-[0.3125rem] px-4 py-3 bg-white w-[30.6875rem]"
+              className="w-full bg-[#0f172b] border border-slate-700 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#5d6cff]"
+              aria-invalid={!!errors.username}
+              aria-describedby={errors.username ? "username-error" : undefined}
             />
+            {errors.username && <p id="username-error" className="text-red-400 text-sm mt-1">{errors.username}</p>}
+          </div>
 
-            <label className="text-charcoal font-semibold text-[1.25rem]">
-              Senha:
-            </label>
+          <div>
+            <label htmlFor="password" className="text-sm font-semibold text-slate-300 mb-1 block">Senha</label>
             <input
+              id="password"
               type="password"
-              placeholder="Sua senha"
+              placeholder="Digite sua senha"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              required
-              className="border border-black rounded-[0.3125rem] px-4 py-3 bg-white w-[30.6875rem]"
+              className="w-full bg-[#0f172b] border border-slate-700 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#5d6cff]"
+              aria-invalid={!!errors.password}
+              aria-describedby={errors.password ? "password-error" : undefined}
             />
-            
-            {error && <p className="text-red-500 text-center">{error}</p>}
+            {errors.password && <p id="password-error" className="text-red-400 text-sm mt-1">{errors.password}</p>}
+          </div>
+        
+          {errors.api && <p role="alert" className="text-red-400 text-center text-sm">{errors.api}</p>}
 
-            <div className="flex justify-center">
-              <button
-                type="submit"
-                className="bg-charcoal text-white font-semibold rounded-[3.125rem] w-[18.75rem] py-3 cursor-pointer hover:bg-[#272d36]"
-              >
-                ENTRAR
-              </button>
-            </div>
-          </form>
+          <button
+            type="submit"
+            className="w-full bg-[#5d6cff] text-white font-bold py-2 rounded-full hover:bg-[#4b58d8] mt-4"
+          >
+            ENTRAR
+          </button>
+        </form>
 
-          <footer>
-            <Link to="/cadastro" className="text-charcoal underline text-[1.25rem]">
-              Não possui uma conta? Se cadastre aqui!
-            </Link>
-          </footer>
-        </section>
-      </main>
-    </div>
+        <footer className="mt-6 text-center">
+          <Link to="/cadastro" className="text-sm text-slate-400 hover:text-[#5d6cff] hover:underline">
+            Não possui uma conta? Cadastre-se aqui!
+          </Link>
+        </footer>
+      </div>
+    </main>
   );
 }
 
