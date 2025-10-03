@@ -4,8 +4,11 @@ import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
 
 const registerSchema = z.object({
-  email: z.email({ message: "Por favor, insira um email válido." }).trim(),
-  username: z.string().trim().min(1, { message: "O nome de usuário é obrigatório." }), 
+  email: z.string()
+    .trim()
+    .min(1, { message: "O email é obrigatório." })
+    .email({ message: "Por favor, insira um email válido." }),
+  username: z.string().trim().min(1, { message: "O nome de usuário é obrigatório." }),
   password: z.string().min(6, { message: "A senha precisa ter no mínimo 6 caracteres." }),
 });
 
@@ -35,15 +38,19 @@ function Register() {
       await axios.post("http://localhost:8000/register/", formData);
 
       setSuccessMessage("Cadastro realizado com sucesso! Redirecionando...");
-      setTimeout(() => navigate("/"), 2000); 
+      setTimeout(() => navigate("/"), 2000);
 
     } catch (err) {
       if (err instanceof z.ZodError) {
-        const formattedErrors = {};
-        err.errors.forEach((error) => {
-          formattedErrors[error.path[0]] = error.message;
-        });
-        setErrors(formattedErrors);
+        const formattedErrors = err.flatten().fieldErrors;
+        
+        const finalErrors = {};
+        for (const key in formattedErrors) {
+          finalErrors[key] = formattedErrors[key][0];
+        }
+
+        setErrors(finalErrors);
+        
       } else {
         const apiError = err.response?.data;
         const errorMessage = apiError ? Object.values(apiError).flat().join(' ') : "Ocorreu um erro. Tente novamente.";
@@ -109,7 +116,7 @@ function Register() {
           {errors.api && <p role="alert" className="text-red-400 text-center text-sm">{errors.api}</p>}
           {successMessage && <p role="alert" className="text-green-400 text-center text-sm">{successMessage}</p>}
 
-          <button type="submit" className="w-full bg-[#5d6cff] text-white font-bold py-2 rounded-full hover:bg-[#4b58d8] mt-4">
+          <button type="submit" className="w-full cursor-pointer bg-[#5d6cff] text-white font-bold py-2 rounded-full hover:bg-[#4b58d8] mt-4">
             CADASTRAR
           </button>
         </form>
@@ -125,4 +132,3 @@ function Register() {
 }
 
 export default Register;
-
